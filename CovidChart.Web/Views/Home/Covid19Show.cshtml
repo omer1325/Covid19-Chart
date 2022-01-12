@@ -1,0 +1,53 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+@section Scripts
+{
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/3.1.7/signalr.min.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script type="text/javascript">
+        $(document).ready(() => {
+            var covidChartList = [];
+            
+            covidChartList.push(["Date", "Istanbul", "Ankara", "Izmir", "Konya", "Antalya"])
+            var connection = new signalR.HubConnectionBuilder().withUrl("https://localhost:44309/CovidHub").build();
+
+            connection.start().then(() => {
+                connection.invoke("GetCovidList");
+            }).catch((err) => {
+                console.log(err);
+            });
+            
+            connection.on("ReceiveCovidList", (covidList) => {
+              
+               
+
+                
+                covidChartList =  covidChartList.splice(0, 1)
+                covidList.forEach((item) => {
+                    covidChartList.push([item.covidDate, item.counts[0], item.counts[1], item.counts[2], item.counts[3], item.counts[4]])
+                })
+                console.log(covidChartList)
+                google.charts.load('current', { 'packages': ['corechart'] });
+                google.charts.setOnLoadCallback(drawChart);
+            })
+
+            function drawChart() {
+                var data = google.visualization.arrayToDataTable(covidChartList);
+
+                var options = {
+                    title: 'Covid19 Chart',
+                    curveType: 'function',
+                    legend: { position: 'bottom' }
+                };
+
+                var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
+                chart.draw(data, options);
+            }
+        })
+    </script>
+}
+
+<div id="curve_chart" style="width: 900px; height: 500px"></div>
